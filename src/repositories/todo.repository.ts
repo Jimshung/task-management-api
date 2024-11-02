@@ -1,11 +1,11 @@
-import { inject, Getter } from '@loopback/core';
+import { Getter, inject } from '@loopback/core';
 import {
   DefaultCrudRepository,
-  repository,
   HasManyRepositoryFactory,
+  repository,
 } from '@loopback/repository';
 import { MysqlDataSource } from '../datasources';
-import { Todo, Item } from '../models';
+import { Item, Todo } from '../models';
 import { ItemRepository } from './item.repository';
 
 export class TodoRepository extends DefaultCrudRepository<
