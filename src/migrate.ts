@@ -1,4 +1,4 @@
-import {TodoAppApplication} from './application';
+import { TodoAppApplication } from './application';
 
 export async function migrate(args: string[]) {
   const existingSchema = args.includes('--rebuild') ? 'drop' : 'alter';
@@ -6,12 +6,10 @@ export async function migrate(args: string[]) {
 
   const app = new TodoAppApplication();
   await app.boot();
-  await app.migrateSchema({existingSchema});
+  await app.migrateSchema({ existingSchema });
 
-  // Connectors usually keep a pool of opened connections,
-  // this keeps the process running even after all work is done.
-  // We need to exit explicitly.
-  process.exit(0);
+  // 關閉應用程序
+  await app.stop();
 }
 
 migrate(process.argv).catch(err => {

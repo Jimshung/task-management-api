@@ -1,6 +1,7 @@
 import { inject, injectable /* inject */ } from '@loopback/core';
 import { repository } from '@loopback/repository';
 import { MysqlDataSource } from '../datasources';
+import { ApiError, ErrorCodes } from '../errors/api-error';
 import { Item, Todo } from '../models';
 import { ItemRepository } from '../repositories/item.repository';
 import { TodoRepository } from '../repositories/todo.repository';
@@ -55,26 +56,44 @@ export class TodoService {
     }
   }
 
-  // 取得 Todo 列表（支援分頁和過濾）
+  // 取得 Todo 列表（支援分���和過濾）
   async findTodos(filter?: {
     status?: 'ACTIVE' | 'INACTIVE';
     page?: number;
     limit?: number;
   }) {
-    const limit = filter?.limit ?? 10;
-    const skip = filter?.page ? (filter.page - 1) * limit : 0;
+    try {
+      const limit = filter?.limit ?? 10;
+      const skip = filter?.page ? (filter.page - 1) * limit : 0;
 
-    const whereClause = {
-      deleted_at: { eq: undefined },
-      ...(filter?.status && { status: filter.status }),
-    };
+      const whereClause = {
+        deleted_at: { eq: undefined },
+        ...(filter?.status && { status: filter.status }),
+      };
 
-    return this.todoRepository.find({
-      where: whereClause,
-      include: ['items'],
-      limit,
-      skip,
-    });
+      const todos = await this.todoRepository.find({
+        where: whereClause,
+        include: ['items'],
+        limit,
+        skip,
+      });
+
+      if (!todos.length && filter?.page && filter.page > 1) {
+        throw new ApiError(404, '找不到更多數據', ErrorCodes.NOT_FOUND, {
+          page: filter.page,
+        });
+      }
+
+      return todos;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError(
+        500,
+        '獲取待辦事項列表失敗',
+        ErrorCodes.DATABASE_ERROR,
+        error,
+      );
+    }
   }
 
   // 更新 Todo 狀態
