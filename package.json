@@ -30,7 +30,7 @@
     "premigrate": "npm run build",
     "migrate": "node ./dist/migrate",
     "preopenapi-spec": "npm run build",
-    "openapi-spec": "node ./dist/openapi-spec",
+    "openapi-spec": "node ./dist/openapi-spec.js",
     "prestart": "npm run rebuild",
     "start": "node -r source-map-support/register .",
     "clean": "lb-clean dist *.tsbuildinfo .eslintcache",
