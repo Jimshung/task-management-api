@@ -17,13 +17,13 @@ export class DatabaseChecker {
   async checkConnection(): Promise<void> {
     try {
       await this.dataSource.ping();
-      console.log('數據庫連接狀態: 成功');
+      console.log('資料庫連接狀態: 成功');
 
       await this.checkModels();
 
       await this.checkRelations();
     } catch (error) {
-      throw new Error(`數據庫檢查失敗: ${error.message}`);
+      throw new Error(`資料庫檢查失敗: ${error.message}`);
     }
   }
 

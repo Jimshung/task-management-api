@@ -17,9 +17,9 @@ async function initializeDatabase(): Promise<void> {
        CHARACTER SET ${process.env.DB_CHARSET}
        COLLATE ${process.env.DB_COLLATION}`,
     );
-    console.log(`數據庫 ${process.env.DB_DATABASE} 創建成功`);
+    console.log(`資料庫 ${process.env.DB_DATABASE} 創建成功`);
   } catch (error) {
-    console.error('創建數據庫失敗:', error);
+    console.error('創建資料庫失敗:', error);
     throw error;
   } finally {
     await connection.end();
@@ -30,7 +30,7 @@ initializeDatabase()
   .then(() => {
     process.exit(0);
   })
-  .catch((error) => {
-    console.error('初始化數據庫時發生錯誤:', error);
+  .catch(error => {
+    console.error('初始化資料庫時發生錯誤:', error);
     process.exit(1);
   });

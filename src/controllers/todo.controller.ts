@@ -1,5 +1,5 @@
-import {inject} from '@loopback/core';
-import {model} from '@loopback/repository';
+import { inject } from '@loopback/core';
+import { model } from '@loopback/repository';
 import {
   del,
   get,
@@ -10,10 +10,10 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {ApiError, ErrorCodes} from '../errors/api-error';
-import {Item, Todo} from '../models';
-import {TodoExamples, TodoSchemas} from '../schemas/todo.schema';
-import {TodoService} from '../services';
+import { ApiError, ErrorCodes } from '../errors/api-error';
+import { Item, Todo } from '../models';
+import { TodoExamples, TodoSchemas } from '../schemas/todo.schema';
+import { TodoService } from '../services';
 
 @model({
   description: 'Todo API Controller',
@@ -85,7 +85,7 @@ export class TodoController {
       todo: Partial<Todo>;
       items: Partial<Item>[];
     },
-  ): Promise<{todo: Todo; items: Item[]}> {
+  ): Promise<{ todo: Todo; items: Item[] }> {
     try {
       console.log('接收到的請求數據:', data);
       const result = await this.todoService.createTodoWithItems(data);
