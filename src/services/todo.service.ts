@@ -1,9 +1,9 @@
-import { inject, injectable } from '@loopback/core';
-import { repository, Where } from '@loopback/repository';
-import { MysqlDataSource } from '../datasources';
-import { ApiError, ErrorCodes } from '../errors';
-import { Item, Todo } from '../models';
-import { ItemRepository, TodoRepository } from '../repositories';
+import {inject, injectable} from '@loopback/core';
+import {repository, Where} from '@loopback/repository';
+import {MysqlDataSource} from '../datasources';
+import {ApiError, ErrorCodes} from '../errors';
+import {Item, Todo} from '../models';
+import {ItemRepository, TodoRepository} from '../repositories';
 
 @injectable()
 export class TodoService {
@@ -20,8 +20,9 @@ export class TodoService {
   public async createTodoWithItems(data: {
     todo: Partial<Todo>;
     items: Partial<Item>[];
-  }): Promise<Todo> {
+  }): Promise<{todo: Todo; items: Item[]}> {
     try {
+      // 先創建 todo
       const todo = await this.todoRepository.create(data.todo);
 
       const itemsWithTodoId = data.items.map(item => ({
@@ -29,18 +30,18 @@ export class TodoService {
         todoId: todo.id,
       }));
 
-      await this.itemRepository.createAll(itemsWithTodoId);
-
-      const result = await this.todoRepository.findById(todo.id);
-      const items = await this.itemRepository.find({
-        where: { todoId: todo.id },
-      });
+      // 創建關聯的 items
+      const items = await this.itemRepository.createAll(itemsWithTodoId);
 
       return {
-        ...result.toJSON(),
+        todo: todo,
         items: items,
-      } as Todo;
+      };
     } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
       throw new ApiError(
         500,
         '創建待辦事項失敗',

@@ -19,3 +19,7 @@
 ## 快速開始
 
 1. 啟動數據庫
+
+## Database Configuration
+
+Copy `my.cnf.example` to `my.cnf` and adjust the settings according to your environment:

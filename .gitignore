@@ -70,3 +70,7 @@ api-docs/
 
 # 其他
 .grunt
+
+# MySQL configuration
+my.cnf
+*.cnf

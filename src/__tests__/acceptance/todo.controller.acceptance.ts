@@ -1,6 +1,7 @@
-import { Client, expect } from '@loopback/testlab';
-import { TodoAppApplication } from '../..';
-import { setupApplication } from './test-helper';
+import {Client, expect} from '@loopback/testlab';
+import {TodoAppApplication} from '../..';
+import {TodoRepository} from '../../repositories';
+import {setupApplication} from './test-helper';
 
 describe('TodoController', () => {
   let app: TodoAppApplication;
@@ -10,35 +11,50 @@ describe('TodoController', () => {
     ({ app, client } = await setupApplication());
   });
 
+  beforeEach(async () => {
+    // 清理測試數據
+    const todoRepo = await app.getRepository(TodoRepository);
+    await todoRepo.deleteAll();
+  });
+
   after(async () => {
     await app.stop();
   });
 
   it('創建待辦事項 - 成功', async () => {
-    const res = await client.post('/todos').send({
+    const res = await client
+      .post('/todos')
+      .send({
+        todo: {
+          title: '測試外鍵關聯',
+          status: 'ACTIVE'
+        },
+        items: [
+          { content: '測試項目1', is_completed: false },
+          { content: '測試項目2', is_completed: false }
+        ]
+      })
+      .expect(200);
+
+    expect(res.body).to.containDeep({
       todo: {
         title: '測試外鍵關聯',
-        status: 'ACTIVE',
+        status: 'ACTIVE'
       },
       items: [
-        {
-          content: '測試項目1',
-          is_completed: false,
-        },
-        {
-          content: '測試項目2',
-          is_completed: false,
-        },
-      ],
+        { content: '測試項目1', is_completed: false },
+        { content: '測試項目2', is_completed: false }
+      ]
     });
 
-    expect(res.status).to.equal(200);
-    expect(res.body).to.have.property('id');
-    expect(res.body.title).to.equal('測試外鍵關聯');
-    expect(res.body.status).to.equal('ACTIVE');
-    expect(res.body.items).to.have.length(2);
-    expect(res.body.items[0].content).to.equal('測試項目1');
-    expect(res.body.items[1].content).to.equal('測試項目2');
+    // 驗證返回的 ID
+    expect(res.body.todo.id).to.be.a.Number();
+    expect(res.body.items[0].id).to.be.a.Number();
+    expect(res.body.items[1].id).to.be.a.Number();
+
+    // 驗證外鍵關聯
+    expect(res.body.items[0].todoId).to.equal(res.body.todo.id);
+    expect(res.body.items[1].todoId).to.equal(res.body.todo.id);
   });
 
   it('創建待辦事項 - 缺少標題應該失敗', async () => {

@@ -59,22 +59,25 @@
     "@loopback/rest": "^13.0.0",
     "@loopback/rest-explorer": "^6.0.0",
     "@loopback/service-proxy": "^6.0.0",
+    "dotenv": "^16.0.3",
+    "loopback-connector-mysql": "^5.4.4",
     "mysql2": "^2.3.3",
-    "dotenv": "^16.0.3"
+    "winston": "^3.16.0"
   },
   "devDependencies": {
     "@loopback/build": "^10.0.0",
     "@loopback/testlab": "^6.0.0",
     "@types/node": "^14.18.0",
-    "typescript": "~4.9.0",
-    "ts-node": "^10.9.1",
+    "@types/winston": "^2.4.4",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
     "eslint": "^8.0.0",
     "eslint-config-airbnb-typescript": "^17.0.0",
-    "eslint-plugin-import": "^2.25.0",
+    "eslint-import-resolver-node": "^0.3.9",
     "eslint-import-resolver-typescript": "^3.6.1",
-    "eslint-import-resolver-node": "^0.3.9"
+    "eslint-plugin-import": "^2.25.0",
+    "ts-node": "^10.9.1",
+    "typescript": "~4.9.0"
   },
   "typeScriptVersion": "4.9.0"
 }

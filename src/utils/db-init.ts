@@ -3,7 +3,7 @@ import * as mysql from 'mysql2/promise';
 
 dotenv.config();
 
-async function initializeDatabase() {
+async function initializeDatabase(): Promise<void> {
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT),
@@ -25,3 +25,12 @@ async function initializeDatabase() {
     await connection.end();
   }
 }
+
+initializeDatabase()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('初始化數據庫時發生錯誤:', error);
+    process.exit(1);
+  });

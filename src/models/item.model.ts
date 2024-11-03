@@ -1,4 +1,4 @@
-import { Entity, model, property } from '@loopback/repository';
+import {Entity, model, property} from '@loopback/repository';
 
 export interface ItemRelations {
   // 定義任何需要的關係
@@ -16,7 +16,7 @@ export type ItemWithRelations = Item & ItemRelations;
     foreignKeys: {
       fkItemTodo: {
         name: 'fk_item_todo',
-        entity: 'todo',
+        entity: 'Todo',
         entityKey: 'id',
         foreignKey: 'todoId',
         onUpdate: 'CASCADE',
@@ -46,8 +46,14 @@ export class Item extends Entity {
 
   @property({
     type: 'number',
+    required: true,
+    mysql: {
+      columnName: 'todoId',
+      dataType: 'int',
+      nullable: 'N',
+    },
   })
-  public todoId?: number;
+  public todoId: number;
 
   @property({
     type: 'boolean',

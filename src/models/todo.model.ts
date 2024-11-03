@@ -1,5 +1,5 @@
-import { Entity, hasMany, model, property } from '@loopback/repository';
-import { Item } from './item.model';
+import {Entity, hasMany, model, property} from '@loopback/repository';
+import {Item} from './item.model';
 
 export interface TodoRelations {
   items?: Item[];
@@ -15,10 +15,10 @@ export type TodoWithRelations = Todo & TodoRelations;
       engine: 'InnoDB',
     },
     indexes: {
-      idx_status: {
+      idxStatus: {
         keys: { status: 1 },
       },
-      idx_deleted_at: {
+      idxDeletedAt: {
         keys: { deleted_at: 1 },
       },
     },
@@ -70,7 +70,9 @@ export class Todo extends Entity {
   })
   public deletedAt?: Date;
 
-  @hasMany(() => Item)
+  @hasMany(() => Item, {
+    keyTo: 'todoId',
+  })
   public items: Item[];
 
   constructor(data?: Partial<Todo>) {
