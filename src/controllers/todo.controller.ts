@@ -10,6 +10,7 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
+import { ApiError, ErrorCodes } from '../errors/api-error';
 import { Item, Todo } from '../models';
 import { TodoExamples, TodoSchemas } from '../schemas/todo.schema';
 import { TodoService } from '../services';
@@ -46,23 +47,31 @@ export class TodoController {
         schema: {
           type: 'object',
           properties: {
+            statusCode: { type: 'number' },
             code: { type: 'string' },
             message: { type: 'string' },
-          },
-        },
-        examples: {
-          'missing-title': {
-            summary: '缺少標題',
-            value: {
-              code: 'VALIDATION_FAILED',
-              message: 'Todo title is required',
-            },
           },
         },
       },
     },
   })
-  async create(
+  @response(500, {
+    description: 'Internal Server Error',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            statusCode: { type: 'number' },
+            code: { type: 'string' },
+            message: { type: 'string' },
+            details: { type: 'object' },
+          },
+        },
+      },
+    },
+  })
+  public async create(
     @requestBody({
       description: 'Todo creation request body',
       required: true,
@@ -73,11 +82,32 @@ export class TodoController {
       },
     })
     data: {
-      todo: Omit<Todo, 'id'>;
-      items?: Omit<Item, 'id' | 'todo_id'>[];
+      todo: Partial<Todo>;
+      items: Partial<Item>[];
     },
   ): Promise<Todo> {
-    return this.todoService.createTodoWithItems(data.todo, data.items || []);
+    try {
+      console.log('接收到的請求數據:', data);
+      const result = await this.todoService.createTodoWithItems(data);
+      console.log('創建成功，返回結果:', result);
+      return result;
+    } catch (error) {
+      console.error('創建 Todo 失敗:', error);
+
+      // 如果是已知的 API 錯誤，直接拋出
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      // 如果是其他錯誤，包裝成 API 錯誤
+      const apiError = new ApiError(
+        500,
+        '創建待辦事項失敗',
+        ErrorCodes.DATABASE_ERROR,
+      );
+      apiError.details = error;
+      throw apiError;
+    }
   }
 
   @get('/todos')
@@ -92,7 +122,7 @@ export class TodoController {
       },
     },
   })
-  async find(
+  public async find(
     @param.query.string('status') status?: 'ACTIVE' | 'INACTIVE',
     @param.query.number('page') page?: number,
     @param.query.number('limit') limit?: number,
@@ -104,7 +134,7 @@ export class TodoController {
   @response(204, {
     description: 'Todo status updated successfully',
   })
-  async updateStatus(
+  public async updateStatus(
     @param.path.number('id') id: number,
     @requestBody({
       content: {
@@ -133,7 +163,7 @@ export class TodoController {
   @response(204, {
     description: 'Todo DELETE success',
   })
-  async delete(@param.path.number('id') id: number): Promise<void> {
+  public async delete(@param.path.number('id') id: number): Promise<void> {
     await this.todoService.deleteTodo(id);
   }
 }

@@ -1,13 +1,15 @@
-import {ApplicationConfig, TodoAppApplication} from './application';
+import { ApplicationConfig, TodoAppApplication } from './application';
 
 export * from './application';
 
-export async function main(options: ApplicationConfig = {}) {
+export async function main(
+  options: ApplicationConfig = {},
+): Promise<TodoAppApplication> {
   const app = new TodoAppApplication(options);
   await app.boot();
   await app.start();
 
-  const url = app.restServer.url;
+  const url = app.restServer.url ?? 'http://127.0.0.1:3000';
   console.log(`Server is running at ${url}`);
   console.log(`Try ${url}/ping`);
 
@@ -15,11 +17,10 @@ export async function main(options: ApplicationConfig = {}) {
 }
 
 if (require.main === module) {
-  // Run the application
   const config = {
     rest: {
       port: +(process.env.PORT ?? 3000),
-      host: process.env.HOST || '127.0.0.1',
+      host: process.env.HOST ?? '127.0.0.1',
       // The `gracePeriodForClose` provides a graceful close for http/https
       // servers with keep-alive clients. The default value is `Infinity`
       // (don't force-close). If you want to immediately destroy all sockets

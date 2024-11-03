@@ -1,10 +1,9 @@
-import { inject, injectable /* inject */ } from '@loopback/core';
-import { repository } from '@loopback/repository';
+import { inject, injectable } from '@loopback/core';
+import { repository, Where } from '@loopback/repository';
 import { MysqlDataSource } from '../datasources';
-import { ApiError, ErrorCodes } from '../errors/api-error';
+import { ApiError, ErrorCodes } from '../errors';
 import { Item, Todo } from '../models';
-import { ItemRepository } from '../repositories/item.repository';
-import { TodoRepository } from '../repositories/todo.repository';
+import { ItemRepository, TodoRepository } from '../repositories';
 
 @injectable()
 export class TodoService {
@@ -18,57 +17,54 @@ export class TodoService {
   ) {}
 
   // 創建 Todo 並同時創建多個 Items
-  async createTodoWithItems(
-    todo: Omit<Todo, 'id'>,
-    items: Omit<Item, 'id' | 'todo_id'>[],
-  ): Promise<Todo> {
-    // 開始事務
-    const transaction = await this.dataSource.beginTransaction();
-
+  public async createTodoWithItems(data: {
+    todo: Partial<Todo>;
+    items: Partial<Item>[];
+  }): Promise<Todo> {
     try {
-      // 在事務中創建 Todo
-      const newTodo = await this.todoRepository.create(todo, {
-        transaction,
+      const todo = await this.todoRepository.create(data.todo);
+
+      const itemsWithTodoId = data.items.map(item => ({
+        ...item,
+        todoId: todo.id,
+      }));
+
+      await this.itemRepository.createAll(itemsWithTodoId);
+
+      const result = await this.todoRepository.findById(todo.id);
+      const items = await this.itemRepository.find({
+        where: { todoId: todo.id },
       });
 
-      if (items && items.length > 0) {
-        const itemsWithTodoId = items.map(item => ({
-          ...item,
-          todo_id: newTodo.id,
-        }));
-        // 在同一個事務中創建 Items
-        await this.itemRepository.createAll(itemsWithTodoId, {
-          transaction,
-        });
-      }
-
-      // 提交事務
-      await transaction.commit();
-
-      // 返回完整的 Todo（包含關聯的 items）
-      return this.todoRepository.findById(newTodo.id, {
-        include: ['items'],
-      });
+      return {
+        ...result.toJSON(),
+        items: items,
+      } as Todo;
     } catch (error) {
-      // 如果發生錯誤，回滾事務
-      await transaction.rollback();
-      throw error;
+      throw new ApiError(
+        500,
+        '創建待辦事項失敗',
+        ErrorCodes.DATABASE_ERROR,
+        error,
+      );
     }
   }
 
-  // 取得 Todo 列表（支援分���和過濾）
-  async findTodos(filter?: {
+  // 取得 Todo 列表（支援分頁和過濾）
+  public async findTodos(params: {
     status?: 'ACTIVE' | 'INACTIVE';
     page?: number;
     limit?: number;
-  }) {
+  }): Promise<Todo[]> {
     try {
-      const limit = filter?.limit ?? 10;
-      const skip = filter?.page ? (filter.page - 1) * limit : 0;
+      const limit = params?.limit ?? 10;
+      const skip = params?.page ? (params.page - 1) * limit : 0;
 
-      const whereClause = {
-        deleted_at: { eq: undefined },
-        ...(filter?.status && { status: filter.status }),
+      const whereClause: Where<Todo> = {
+        and: [
+          { deletedAt: undefined },
+          ...(params?.status ? [{ status: params.status }] : []),
+        ],
       };
 
       const todos = await this.todoRepository.find({
@@ -78,9 +74,9 @@ export class TodoService {
         skip,
       });
 
-      if (!todos.length && filter?.page && filter.page > 1) {
+      if (!todos.length && params?.page && params.page > 1) {
         throw new ApiError(404, '找不到更多數據', ErrorCodes.NOT_FOUND, {
-          page: filter.page,
+          page: params.page,
         });
       }
 
@@ -97,7 +93,7 @@ export class TodoService {
   }
 
   // 更新 Todo 狀態
-  async updateTodoStatus(
+  public async updateTodoStatus(
     id: number,
     status: 'ACTIVE' | 'INACTIVE',
   ): Promise<void> {
@@ -105,7 +101,7 @@ export class TodoService {
   }
 
   // 軟刪除 Todo
-  async deleteTodo(id: number): Promise<void> {
+  public async deleteTodo(id: number): Promise<void> {
     await this.todoRepository.softDelete(id);
   }
 }

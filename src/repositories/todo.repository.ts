@@ -5,12 +5,13 @@ import {
   repository,
 } from '@loopback/repository';
 import { MysqlDataSource } from '../datasources';
-import { Item, Todo } from '../models';
+import { Item, Todo, TodoRelations } from '../models';
 import { ItemRepository } from './item.repository';
 
 export class TodoRepository extends DefaultCrudRepository<
   Todo,
-  typeof Todo.prototype.id
+  typeof Todo.prototype.id,
+  TodoRelations
 > {
   public readonly items: HasManyRepositoryFactory<
     Item,
@@ -27,11 +28,12 @@ export class TodoRepository extends DefaultCrudRepository<
       'items',
       itemRepositoryGetter,
     );
+    this.registerInclusionResolver('items', this.items.inclusionResolver);
   }
 
-  async softDelete(id: number): Promise<void> {
+  public async softDelete(id: number): Promise<void> {
     await this.updateById(id, {
-      deleted_at: new Date().toISOString(),
+      deletedAt: new Date(),
     });
   }
 }

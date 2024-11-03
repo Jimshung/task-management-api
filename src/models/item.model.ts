@@ -1,35 +1,66 @@
-import { belongsTo, Entity, model, property } from '@loopback/repository';
-import { Todo } from './todo.model';
+import { Entity, model, property } from '@loopback/repository';
 
-@model()
+export interface ItemRelations {
+  // 定義任何需要的關係
+}
+
+export type ItemWithRelations = Item & ItemRelations;
+
+@model({
+  settings: {
+    mysql: {
+      schema: 'todo_db',
+      table: 'item',
+      engine: 'InnoDB',
+    },
+    foreignKeys: {
+      fkItemTodo: {
+        name: 'fk_item_todo',
+        entity: 'todo',
+        entityKey: 'id',
+        foreignKey: 'todoId',
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+      },
+    },
+    indexes: {
+      idxTodoId: {
+        keys: { todoId: 1 },
+      },
+    },
+  },
+})
 export class Item extends Entity {
   @property({
     type: 'number',
     id: true,
     generated: true,
   })
-  id?: number;
+  public id?: number;
 
   @property({
     type: 'string',
     required: true,
   })
-  content: string;
+  public content: string;
+
+  @property({
+    type: 'number',
+  })
+  public todoId?: number;
 
   @property({
     type: 'boolean',
-    required: true,
     default: false,
+    name: 'is_completed',
   })
-  is_completed: boolean;
+  public is_completed: boolean;
 
   @property({
     type: 'date',
+    name: 'completed_at',
   })
-  completed_at?: string;
-
-  @belongsTo(() => Todo)
-  todo_id: number;
+  public completed_at?: Date;
 
   constructor(data?: Partial<Item>) {
     super(data);

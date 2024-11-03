@@ -1,11 +1,12 @@
 import { inject } from '@loopback/core';
 import { DefaultCrudRepository } from '@loopback/repository';
 import { MysqlDataSource } from '../datasources';
-import { Item } from '../models';
+import { Item, ItemRelations } from '../models/item.model';
 
 export class ItemRepository extends DefaultCrudRepository<
   Item,
-  typeof Item.prototype.id
+  typeof Item.prototype.id,
+  ItemRelations
 > {
   constructor(@inject('datasources.mysql') dataSource: MysqlDataSource) {
     super(Item, dataSource);

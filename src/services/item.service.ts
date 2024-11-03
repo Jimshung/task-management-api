@@ -1,8 +1,8 @@
 import { injectable } from '@loopback/core';
 import { repository } from '@loopback/repository';
-import { ApiError, ErrorCodes } from '../errors/api-error';
+import { ApiError, ErrorCodes } from '../errors';
 import { Item } from '../models';
-import { ItemRepository } from '../repositories/item.repository';
+import { ItemRepository } from '../repositories';
 
 @injectable()
 export class ItemService {
@@ -11,8 +11,10 @@ export class ItemService {
     private itemRepository: ItemRepository,
   ) {}
 
-  // 更新項目完成狀態
-  async updateItemCompletion(id: number, isCompleted: boolean): Promise<void> {
+  public async updateItemCompletion(
+    id: number,
+    isCompleted: boolean,
+  ): Promise<void> {
     try {
       const item = await this.itemRepository.findById(id);
       if (!item) {
@@ -21,7 +23,7 @@ export class ItemService {
 
       const updateData: Partial<Item> = {
         is_completed: isCompleted,
-        completed_at: isCompleted ? new Date().toISOString() : undefined,
+        completed_at: isCompleted ? new Date() : undefined,
       };
 
       await this.itemRepository.updateById(id, updateData);
@@ -36,13 +38,11 @@ export class ItemService {
     }
   }
 
-  // 批量更新項目狀態
-  async bulkUpdateCompletion(
+  public async bulkUpdateCompletion(
     ids: number[],
     isCompleted: boolean,
   ): Promise<void> {
     try {
-      // 檢查所有項目是否存在
       const items = await this.itemRepository.find({
         where: {
           id: { inq: ids },
@@ -55,7 +55,7 @@ export class ItemService {
 
       const updateData: Partial<Item> = {
         is_completed: isCompleted,
-        completed_at: isCompleted ? new Date().toISOString() : undefined,
+        completed_at: isCompleted ? new Date() : undefined,
       };
 
       await Promise.all(
@@ -72,8 +72,7 @@ export class ItemService {
     }
   }
 
-  // 取得特定 Todo 的所有項目
-  async findItemsByTodoId(
+  public async findItemsByTodoId(
     todoId: number,
     filter?: {
       isCompleted?: boolean;
@@ -81,13 +80,13 @@ export class ItemService {
   ): Promise<Item[]> {
     try {
       const whereClause = {
-        todo_id: todoId,
+        todoId,
         ...(filter?.isCompleted !== undefined && {
           is_completed: filter.isCompleted,
         }),
       };
 
-      return this.itemRepository.find({
+      return await this.itemRepository.find({
         where: whereClause,
       });
     } catch (error) {

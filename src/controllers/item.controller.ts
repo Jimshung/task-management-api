@@ -30,7 +30,7 @@ export class ItemController {
   })
   async findByTodoId(
     @param.path.number('todoId') todoId: number,
-    @param.query.boolean('isCompleted') isCompleted?: boolean,
+      @param.query.boolean('isCompleted') isCompleted?: boolean,
   ): Promise<Item[]> {
     return this.itemService.findItemsByTodoId(todoId, { isCompleted });
   }
@@ -41,22 +41,22 @@ export class ItemController {
   })
   async updateCompletion(
     @param.path.number('id') id: number,
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            required: ['isCompleted'],
-            properties: {
-              isCompleted: { type: 'boolean' },
+      @requestBody({
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['isCompleted'],
+              properties: {
+                isCompleted: { type: 'boolean' },
+              },
             },
           },
         },
+      })
+      data: {
+        isCompleted: boolean;
       },
-    })
-    data: {
-      isCompleted: boolean;
-    },
   ): Promise<void> {
     await this.itemService.updateItemCompletion(id, data.isCompleted);
   }
@@ -83,10 +83,10 @@ export class ItemController {
         },
       },
     })
-    data: {
-      ids: number[];
-      isCompleted: boolean;
-    },
+      data: {
+        ids: number[];
+        isCompleted: boolean;
+      },
   ): Promise<void> {
     await this.itemService.bulkUpdateCompletion(data.ids, data.isCompleted);
   }
