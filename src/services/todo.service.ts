@@ -1,9 +1,9 @@
-import {inject, injectable} from '@loopback/core';
-import {repository, Where} from '@loopback/repository';
-import {MysqlDataSource} from '../datasources';
-import {ApiError, ErrorCodes} from '../errors';
-import {Item, Todo} from '../models';
-import {ItemRepository, TodoRepository} from '../repositories';
+import { inject, injectable } from '@loopback/core';
+import { repository, Where } from '@loopback/repository';
+import { MysqlDataSource } from '../datasources';
+import { ApiError, ErrorCodes } from '../errors';
+import { Item, Todo } from '../models';
+import { ItemRepository, TodoRepository } from '../repositories';
 
 @injectable()
 export class TodoService {
@@ -20,7 +20,7 @@ export class TodoService {
   public async createTodoWithItems(data: {
     todo: Partial<Todo>;
     items: Partial<Item>[];
-  }): Promise<{todo: Todo; items: Item[]}> {
+  }): Promise<{ todo: Todo; items: Item[] }> {
     try {
       // 先創建 todo
       const todo = await this.todoRepository.create(data.todo);
@@ -93,16 +93,58 @@ export class TodoService {
     }
   }
 
-  // 更新 Todo 狀態
-  public async updateTodoStatus(
-    id: number,
-    status: 'ACTIVE' | 'INACTIVE',
-  ): Promise<void> {
-    await this.todoRepository.updateById(id, { status });
-  }
-
   // 軟刪除 Todo
   public async deleteTodo(id: number): Promise<void> {
     await this.todoRepository.softDelete(id);
+  }
+
+  public async findTodoById(id: number): Promise<Todo | null> {
+    try {
+      const todo = await this.todoRepository.findOne({
+        where: {
+          id: id,
+          deletedAt: undefined, // 只查詢未被軟刪除的記錄
+        },
+        include: ['items'],
+      });
+
+      return todo;
+    } catch (error) {
+      throw new ApiError(
+        500,
+        '查詢待辦事項失敗',
+        ErrorCodes.DATABASE_ERROR,
+        error,
+      );
+    }
+  }
+
+  public async updateTodo(id: number, data: Partial<Todo>): Promise<void> {
+    try {
+      const existingTodo = await this.todoRepository.findOne({
+        where: {
+          id: id,
+          deletedAt: undefined,
+        },
+      });
+
+      if (!existingTodo) {
+        throw new ApiError(404, '找不到該待辦事項', ErrorCodes.NOT_FOUND);
+      }
+
+      if (data.status && !['ACTIVE', 'INACTIVE'].includes(data.status)) {
+        throw new ApiError(400, '無效的狀態值', ErrorCodes.VALIDATION_ERROR);
+      }
+
+      await this.todoRepository.updateById(id, data);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError(
+        500,
+        '更新待辦事項失敗',
+        ErrorCodes.DATABASE_ERROR,
+        error,
+      );
+    }
   }
 }

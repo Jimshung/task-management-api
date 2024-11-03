@@ -12,7 +12,7 @@ import {
 } from '@loopback/rest';
 import { ApiError, ErrorCodes } from '../errors/api-error';
 import { Item, Todo } from '../models';
-import { TodoExamples, TodoSchemas } from '../schemas/todo.schema';
+import { TodoSchemas } from '../schemas/todo.schema';
 import { TodoService } from '../services';
 
 @model({
@@ -31,40 +31,20 @@ export class TodoController {
     content: {
       'application/json': {
         schema: TodoSchemas.TodoCreateResponse,
-        examples: {
-          success: {
-            summary: '成功創建 Todo',
-            value: TodoExamples.TodoCreateRequest,
-          },
-        },
       },
     },
   })
-  @response(400, {
-    description: 'Invalid input',
+  @response(422, {
+    description: 'Validation Error',
     content: {
       'application/json': {
         schema: {
           type: 'object',
           properties: {
             statusCode: { type: 'number' },
-            code: { type: 'string' },
+            name: { type: 'string' },
             message: { type: 'string' },
-          },
-        },
-      },
-    },
-  })
-  @response(500, {
-    description: 'Internal Server Error',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            statusCode: { type: 'number' },
             code: { type: 'string' },
-            message: { type: 'string' },
             details: { type: 'object' },
           },
         },
@@ -87,6 +67,22 @@ export class TodoController {
     },
   ): Promise<{ todo: Todo; items: Item[] }> {
     try {
+      if (!data.todo.title) {
+        throw new ApiError(422, '標題為必填欄位', ErrorCodes.VALIDATION_ERROR, {
+          field: 'title',
+        });
+      }
+
+      if (
+        data.todo.status &&
+        !['ACTIVE', 'INACTIVE'].includes(data.todo.status)
+      ) {
+        throw new ApiError(422, '無效的狀態值', ErrorCodes.VALIDATION_ERROR, {
+          field: 'status',
+          value: data.todo.status,
+        });
+      }
+
       console.log('接收到的請求數據:', data);
       const result = await this.todoService.createTodoWithItems(data);
       console.log('創建成功，返回結果:', result);
@@ -98,13 +94,12 @@ export class TodoController {
         throw error;
       }
 
-      const apiError = new ApiError(
+      throw new ApiError(
         500,
         '創建待辦事項失敗',
         ErrorCodes.DATABASE_ERROR,
+        error,
       );
-      apiError.details = error;
-      throw apiError;
     }
   }
 
@@ -128,40 +123,78 @@ export class TodoController {
     return this.todoService.findTodos({ status, page, limit });
   }
 
-  @patch('/todos/{id}/status')
-  @response(204, {
-    description: 'Todo status updated successfully',
+  @patch('/todos/{id}')
+  @response(200, {
+    description: 'Todo PATCH success',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Todo),
+      },
+    },
   })
-  public async updateStatus(
+  public async updateById(
     @param.path.number('id') id: number,
     @requestBody({
       content: {
         'application/json': {
-          schema: {
-            type: 'object',
-            required: ['status'],
-            properties: {
-              status: {
-                type: 'string',
-                enum: ['ACTIVE', 'INACTIVE'],
-              },
-            },
-          },
+          schema: getModelSchemaRef(Todo, { partial: true }),
         },
       },
     })
-    data: {
-      status: 'ACTIVE' | 'INACTIVE';
-    },
-  ): Promise<void> {
-    await this.todoService.updateTodoStatus(id, data.status);
+    todo: Partial<Todo>,
+  ): Promise<Todo> {
+    try {
+      await this.todoService.updateTodo(id, todo);
+      const updatedTodo = await this.todoService.findTodoById(id);
+      if (!updatedTodo) {
+        throw new ApiError(404, '找不到該待辦事項', ErrorCodes.NOT_FOUND);
+      }
+      return updatedTodo;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError(
+        500,
+        '更新待辦事項失敗',
+        ErrorCodes.DATABASE_ERROR,
+        error,
+      );
+    }
   }
 
   @del('/todos/{id}')
   @response(204, {
-    description: 'Todo DELETE success',
+    description: 'Todo DELETE success (No Content)',
   })
   public async delete(@param.path.number('id') id: number): Promise<void> {
     await this.todoService.deleteTodo(id);
+  }
+
+  @get('/todos/{id}')
+  @response(200, {
+    description: 'Todo model instance with items',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Todo, {
+          includeRelations: true,
+        }),
+      },
+    },
+  })
+  public async findById(@param.path.number('id') id: number): Promise<Todo> {
+    try {
+      const todo = await this.todoService.findTodoById(id);
+      if (!todo) {
+        throw new ApiError(404, '找不到該待辦事項', ErrorCodes.NOT_FOUND);
+      }
+      return todo;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError(
+        500,
+        '獲取待辦事項失敗',
+        ErrorCodes.DATABASE_ERROR,
+        error,
+      );
+    }
   }
 }
