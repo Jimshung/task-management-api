@@ -2,13 +2,15 @@ import { injectable } from '@loopback/core';
 import { repository } from '@loopback/repository';
 import { ApiError, ErrorCodes } from '../errors';
 import { Item } from '../models';
-import { ItemRepository } from '../repositories';
+import { ItemRepository, TodoRepository } from '../repositories';
 
 @injectable()
 export class ItemService {
   constructor(
     @repository(ItemRepository)
     private itemRepository: ItemRepository,
+    @repository(TodoRepository)
+    private todoRepository: TodoRepository,
   ) {}
 
   public async updateItemCompletion(
@@ -79,6 +81,11 @@ export class ItemService {
     },
   ): Promise<Item[]> {
     try {
+      const todo = await this.todoRepository.findById(todoId);
+      if (!todo) {
+        throw new ApiError(404, '找不到該待辦事項', ErrorCodes.NOT_FOUND);
+      }
+
       const whereClause = {
         todoId,
         ...(filter?.isCompleted !== undefined && {
@@ -86,16 +93,59 @@ export class ItemService {
         }),
       };
 
-      return await this.itemRepository.find({
+      const items = await this.itemRepository.find({
         where: whereClause,
+        order: ['id ASC'],
       });
+
+      return items;
     } catch (error) {
+      if (error instanceof ApiError) throw error;
       throw new ApiError(
         500,
         '獲取項目列表失敗',
         ErrorCodes.DATABASE_ERROR,
         error,
       );
+    }
+  }
+
+  public async findById(id: number): Promise<Item> {
+    try {
+      const item = await this.itemRepository.findById(id);
+      if (!item) {
+        throw new ApiError(404, '找不到該項目', ErrorCodes.NOT_FOUND);
+      }
+      return item;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError(500, '獲取項目失敗', ErrorCodes.DATABASE_ERROR, error);
+    }
+  }
+
+  public async create(item: Omit<Item, 'id'>): Promise<Item> {
+    try {
+      return await this.itemRepository.create(item);
+    } catch (error) {
+      throw new ApiError(500, '創建項目失敗', ErrorCodes.DATABASE_ERROR, error);
+    }
+  }
+
+  public async updateById(id: number, item: Partial<Item>): Promise<Item> {
+    try {
+      await this.itemRepository.updateById(id, item);
+      return await this.findById(id);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError(500, '更新項目失敗', ErrorCodes.DATABASE_ERROR, error);
+    }
+  }
+
+  public async deleteById(id: number): Promise<void> {
+    try {
+      await this.itemRepository.deleteById(id);
+    } catch (error) {
+      throw new ApiError(500, '刪除項目失敗', ErrorCodes.DATABASE_ERROR, error);
     }
   }
 }

@@ -1,12 +1,17 @@
 import { inject } from '@loopback/core';
 import {
+  del,
   get,
   getModelSchemaRef,
   param,
   patch,
+  post,
   requestBody,
   response,
+  Response,
+  RestBindings,
 } from '@loopback/rest';
+import { ApiError, ErrorCodes } from '../errors';
 import { Item } from '../models';
 import { ItemService } from '../services';
 
@@ -14,6 +19,8 @@ export class ItemController {
   constructor(
     @inject('services.ItemService')
     private itemService: ItemService,
+    @inject(RestBindings.Http.RESPONSE)
+    private res: Response,
   ) {}
 
   @get('/todos/{todoId}/items')
@@ -32,62 +39,81 @@ export class ItemController {
     @param.path.number('todoId') todoId: number,
     @param.query.boolean('isCompleted') isCompleted?: boolean,
   ): Promise<Item[]> {
+    if (!todoId || isNaN(todoId)) {
+      throw new ApiError(400, '無效的待辦事項ID', ErrorCodes.VALIDATION_ERROR);
+    }
     return this.itemService.findItemsByTodoId(todoId, { isCompleted });
   }
 
-  @patch('/items/{id}/completion')
-  @response(204, {
-    description: 'Item completion status updated successfully',
+  @get('/items/{id}')
+  @response(200, {
+    description: 'Item model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Item),
+      },
+    },
   })
-  public async updateCompletion(
+  public async findById(@param.path.number('id') id: number): Promise<Item> {
+    return this.itemService.findById(id);
+  }
+
+  @post('/todos/{todoId}/items')
+  @response(201, {
+    description: 'Item model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Item),
+      },
+    },
+  })
+  public async create(
+    @param.path.number('todoId') todoId: number,
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Item, {
+            title: 'NewItem',
+            exclude: ['id', 'todoId'],
+          }),
+        },
+      },
+    })
+    item: Omit<Item, 'id' | 'todoId'>,
+  ): Promise<Item> {
+    const result = await this.itemService.create({ ...item, todoId });
+    this.res.status(201);
+    return result;
+  }
+
+  @patch('/items/{id}')
+  @response(200, {
+    description: 'Item model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Item),
+      },
+    },
+  })
+  public async updateById(
     @param.path.number('id') id: number,
     @requestBody({
       content: {
         'application/json': {
-          schema: {
-            type: 'object',
-            required: ['isCompleted'],
-            properties: {
-              isCompleted: { type: 'boolean' },
-            },
-          },
+          schema: getModelSchemaRef(Item, { partial: true }),
         },
       },
     })
-    data: {
-      isCompleted: boolean;
-    },
-  ): Promise<void> {
-    await this.itemService.updateItemCompletion(id, data.isCompleted);
+    item: Partial<Item>,
+  ): Promise<Item> {
+    return this.itemService.updateById(id, item);
   }
 
-  @patch('/items/bulk-completion')
+  @del('/items/{id}')
   @response(204, {
-    description: 'Items completion status updated successfully',
+    description: 'Item DELETE success',
   })
-  public async bulkUpdateCompletion(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            required: ['ids', 'isCompleted'],
-            properties: {
-              ids: {
-                type: 'array',
-                items: { type: 'number' },
-              },
-              isCompleted: { type: 'boolean' },
-            },
-          },
-        },
-      },
-    })
-    data: {
-      ids: number[];
-      isCompleted: boolean;
-    },
-  ): Promise<void> {
-    await this.itemService.bulkUpdateCompletion(data.ids, data.isCompleted);
+  public async deleteById(@param.path.number('id') id: number): Promise<void> {
+    await this.itemService.deleteById(id);
   }
 }
