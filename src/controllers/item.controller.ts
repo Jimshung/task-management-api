@@ -63,7 +63,10 @@ export class ItemController {
     description: 'Item model instance',
     content: {
       'application/json': {
-        schema: getModelSchemaRef(Item),
+        schema: getModelSchemaRef(Item, {
+          title: 'NewItem',
+          exclude: ['id', 'todoId'],
+        }),
       },
     },
   })

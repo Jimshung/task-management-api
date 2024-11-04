@@ -1,5 +1,5 @@
-import {ApplicationConfig} from '@loopback/core';
-import {TodoAppApplication} from './application';
+import { ApplicationConfig } from '@loopback/core';
+import { TodoAppApplication } from './application';
 
 /**
  * Export the OpenAPI spec from the application
@@ -13,7 +13,6 @@ async function exportOpenApiSpec(): Promise<void> {
   };
 
   const app = new TodoAppApplication(config);
-  await app.boot();
   await app.boot();
   await app.exportOpenApiSpec('openapi.json');
 }

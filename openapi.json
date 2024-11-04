@@ -254,6 +254,37 @@
           }
         ],
         "operationId": "TodoController.delete"
+      },
+      "get": {
+        "summary": "根據 ID 取得單一 Todo",
+        "description": "取得 Todo 及其關聯的 Items",
+        "responses": {
+          "200": {
+            "description": "Todo model instance with items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoWithRelations"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "根據 ID 更新 Todo",
+        "responses": {
+          "200": {
+            "description": "Todo PATCH success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Todo"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/todos": {
@@ -419,15 +450,19 @@
           {
             "name": "page",
             "in": "query",
+            "description": "頁碼",
             "schema": {
-              "type": "number"
+              "type": "integer",
+              "minimum": 1
             }
           },
           {
             "name": "limit",
             "in": "query",
+            "description": "每頁筆數",
             "schema": {
-              "type": "number"
+              "type": "integer",
+              "minimum": 1
             }
           }
         ],
@@ -558,6 +593,31 @@
               }
             },
             "additionalProperties": true
+          }
+        }
+      },
+      "Todo": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "id": {
+            "type": "number",
+            "readOnly": true
+          },
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "INACTIVE"],
+            "default": "ACTIVE"
+          },
+          "deleted_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }
