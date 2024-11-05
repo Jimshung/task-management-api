@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "todo-app",
+    "title": "task-management-api",
     "version": "0.0.1",
-    "description": "todo-app",
+    "description": "task-management-api",
     "contact": {}
   },
   "paths": {

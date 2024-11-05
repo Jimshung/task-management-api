@@ -1,7 +1,7 @@
 {
-  "name": "todo-app",
+  "name": "task-management-api",
   "version": "0.0.1",
-  "description": "todo-app",
+  "description": "task-management-api",
   "keywords": [
     "loopback-application",
     "loopback"
@@ -28,8 +28,8 @@
     "posttest": "echo 'Skipping lint check'",
     "test:dev": "lb-mocha --allow-console-logs 'dist/__tests__/**/*.js' --no-deprecation",
     "test:filter": "NODE_ENV=test mocha --require dotenv/config 'dist/__tests__/**/*.js' --timeout 10000 --exit --no-deprecation -g",
-    "docker:build": "docker build -t todo-app .",
-    "docker:run": "docker run -p 3000:3000 -d todo-app",
+    "docker:build": "docker build -t task-management-api .",
+    "docker:run": "docker run -p 3000:3000 -d task-management-api",
     "premigrate": "npm run build",
     "migrate": "node ./dist/migrate",
     "preopenapi-spec": "npm run build",
