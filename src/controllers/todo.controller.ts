@@ -83,13 +83,9 @@ export class TodoController {
         });
       }
 
-      console.log('接收到的請求數據:', data);
       const result = await this.todoService.createTodoWithItems(data);
-      console.log('創建成功，返回結果:', result);
       return result;
     } catch (error) {
-      console.error('創建 Todo 失敗:', error);
-
       if (error instanceof ApiError) {
         throw error;
       }

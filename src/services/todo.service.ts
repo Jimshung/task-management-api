@@ -95,7 +95,27 @@ export class TodoService {
 
   // 軟刪除 Todo
   public async deleteTodo(id: number): Promise<void> {
-    await this.todoRepository.softDelete(id);
+    try {
+      const todo = await this.todoRepository.findById(id);
+      if (!todo) {
+        throw new ApiError(404, '找不到該待辦事項', ErrorCodes.NOT_FOUND, {
+          id,
+        });
+      }
+
+      // 執行軟刪除
+      await this.todoRepository.updateById(id, {
+        deletedAt: new Date(),
+      });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError(
+        500,
+        '刪除待辦事項失敗',
+        ErrorCodes.DATABASE_ERROR,
+        error,
+      );
+    }
   }
 
   public async findTodoById(id: number): Promise<Todo | null> {

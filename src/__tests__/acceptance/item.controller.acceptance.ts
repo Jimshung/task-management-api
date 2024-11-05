@@ -1,6 +1,7 @@
 import { Client, expect } from '@loopback/testlab';
 import { TodoAppApplication } from '../..';
 import { initializeTestDatabase } from '../../utils/test-db-init';
+import { TodoItem } from '../types';
 import { setupApplication } from './test-helper';
 
 describe('ItemController', () => {
@@ -180,6 +181,46 @@ describe('ItemController', () => {
           id: nonExistentId,
         },
       });
+    });
+  });
+
+  describe('刪除項目', () => {
+    it('刪除存在的項目 - 成功', async () => {
+      const res = await client.del(`/items/${itemId}`);
+      expect(res.status).to.equal(204);
+
+      // 確認項目已被刪除
+      const getRes = await client.get(`/items/${itemId}`);
+      expect(getRes.status).to.equal(404);
+    });
+
+    it('刪除不存在的項目 - 應返回404', async () => {
+      const nonExistentId = 99999;
+      const res = await client.del(`/items/${nonExistentId}`);
+
+      expect(res.status).to.equal(404);
+      expect(res.body.error).to.containDeep({
+        statusCode: 404,
+        name: 'ApiError',
+        message: '找不到要刪除的項目',
+        code: 'NOT_FOUND',
+        details: {
+          id: nonExistentId,
+        },
+      });
+    });
+
+    it('刪除項目後，該項目不應出現在待辦事項的項目列表中', async () => {
+      // 刪除項目
+      await client.del(`/items/${itemId}`);
+
+      // 檢查待辦事項的項目列表
+      const res = await client.get(`/todos/${todoId}/items`);
+      expect(res.status).to.equal(200);
+      expect(res.body).to.be.Array();
+      expect(
+        res.body.find((item: TodoItem) => item.id === itemId),
+      ).to.be.undefined();
     });
   });
 });

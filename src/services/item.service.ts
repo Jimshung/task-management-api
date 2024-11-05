@@ -112,9 +112,11 @@ export class ItemService {
 
   public async findById(id: number): Promise<Item> {
     try {
-      const item = await this.itemRepository.findById(id);
+      const item = await this.itemRepository.findById(id).catch(() => null);
       if (!item) {
-        throw new ApiError(404, '找不到該項目', ErrorCodes.NOT_FOUND);
+        throw new ApiError(404, '找不到該項目', ErrorCodes.NOT_FOUND, {
+          id,
+        });
       }
       return item;
     } catch (error) {
@@ -157,8 +159,18 @@ export class ItemService {
 
   public async deleteById(id: number): Promise<void> {
     try {
+      const existingItem = await this.itemRepository
+        .findById(id)
+        .catch(() => null);
+      if (!existingItem) {
+        throw new ApiError(404, '找不到要刪除的項目', ErrorCodes.NOT_FOUND, {
+          id,
+        });
+      }
+
       await this.itemRepository.deleteById(id);
     } catch (error) {
+      if (error instanceof ApiError) throw error;
       throw new ApiError(500, '刪除項目失敗', ErrorCodes.DATABASE_ERROR, error);
     }
   }
