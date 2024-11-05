@@ -1,5 +1,6 @@
 import { Client, expect } from '@loopback/testlab';
 import { TodoAppApplication } from '../..';
+import { initializeTestDatabase } from '../../utils/test-db-init';
 import { setupApplication } from './test-helper';
 
 describe('ItemController', () => {
@@ -9,7 +10,13 @@ describe('ItemController', () => {
   let itemId: number;
 
   before('setupApplication', async () => {
-    ({ app, client } = await setupApplication());
+    try {
+      await initializeTestDatabase();
+      ({ app, client } = await setupApplication());
+    } catch (error) {
+      console.error('測試設置失敗:', error);
+      throw error;
+    }
   });
 
   after(async () => {
@@ -71,7 +78,7 @@ describe('ItemController', () => {
 
   // 測試新增 Item
   it('新增 Item - 成功', async () => {
-    console.log('測試：開始執行新增 Item 測試');
+    console.log('試：開始執行新增 Item 測試');
     console.log('測試：使用的 todoId =', todoId);
 
     const newItem = {
@@ -109,5 +116,70 @@ describe('ItemController', () => {
   it('刪除 Item - 成功', async () => {
     const res = await client.del(`/items/${itemId}`);
     expect(res.status).to.equal(204);
+  });
+
+  describe('更新項目狀態', () => {
+    it('更新項目為已完成 - 應自動設置完成時間', async () => {
+      const res = await client.patch(`/items/${itemId}`).send({
+        is_completed: true,
+      });
+
+      expect(res.status).to.equal(200);
+      expect(res.body.is_completed).to.be.true();
+      expect(res.body.completed_at).to.be.String();
+      expect(new Date(res.body.completed_at)).to.be.instanceOf(Date);
+    });
+
+    it('更新項目為未完成 - 應清除完成時間', async () => {
+      // 先將項目設為已完成
+      await client.patch(`/items/${itemId}`).send({
+        is_completed: true,
+      });
+
+      // 再將項目設為未完成
+      const res = await client.patch(`/items/${itemId}`).send({
+        is_completed: false,
+      });
+
+      expect(res.status).to.equal(200);
+      expect(res.body.is_completed).to.be.false();
+      expect(res.body.completed_at).to.be.null();
+    });
+
+    it('更新項目內容 - 不應影響完成狀態', async () => {
+      // 先設置初始狀態
+      const initialRes = await client.patch(`/items/${itemId}`).send({
+        is_completed: true,
+      });
+      const initialCompletedAt = initialRes.body.completed_at;
+
+      // 更新內容
+      const res = await client.patch(`/items/${itemId}`).send({
+        content: '更新的內容',
+      });
+
+      expect(res.status).to.equal(200);
+      expect(res.body.content).to.equal('更新的內容');
+      expect(res.body.is_completed).to.be.true();
+      expect(res.body.completed_at).to.equal(initialCompletedAt);
+    });
+
+    it('更新不存在的項目 - 應返回404', async () => {
+      const nonExistentId = 99999;
+      const res = await client.patch(`/items/${nonExistentId}`).send({
+        content: '測試內容',
+      });
+
+      expect(res.status).to.equal(404);
+      expect(res.body.error).to.containDeep({
+        statusCode: 404,
+        name: 'ApiError',
+        message: '找不到要更新的項目',
+        code: 'NOT_FOUND',
+        details: {
+          id: nonExistentId,
+        },
+      });
+    });
   });
 });

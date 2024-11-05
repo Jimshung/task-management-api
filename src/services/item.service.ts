@@ -133,6 +133,20 @@ export class ItemService {
 
   public async updateById(id: number, item: Partial<Item>): Promise<Item> {
     try {
+      const existingItem = await this.itemRepository
+        .findById(id)
+        .catch(() => null);
+      if (!existingItem) {
+        throw new ApiError(404, '找不到要更新的項目', ErrorCodes.NOT_FOUND, {
+          id,
+        });
+      }
+
+      // 如果更新包含 is_completed，自動處理 completed_at
+      if (item.is_completed !== undefined) {
+        item.completed_at = item.is_completed ? new Date() : undefined;
+      }
+
       await this.itemRepository.updateById(id, item);
       return await this.findById(id);
     } catch (error) {

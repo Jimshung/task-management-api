@@ -16,11 +16,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Item model instance",
+            "description": "更新項目。注意：completed_at 欄位由系統自動根據 is_completed 的值進行管理，無需手動設置。",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Item"
+                  "$ref": "#/components/schemas/UpdateItem"
                 }
               }
             }
@@ -40,10 +40,11 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ItemPartial"
+                "$ref": "#/components/schemas/UpdateItemRequest"
               }
             }
           },
+          "description": "可更新項目的內容、完成狀態或所屬待辦事項。completed_at 由系統自動管理。",
           "x-parameter-index": 1
         },
         "operationId": "ItemController.updateById"
@@ -739,10 +740,10 @@
         "additionalProperties": false,
         "x-typescript-type": "Omit<Item, 'id' | 'todoId'>"
       },
-      "ItemPartial": {
-        "title": "ItemPartial",
+      "UpdateItem": {
+        "title": "UpdateItem",
         "type": "object",
-        "description": "(tsType: Partial<Item>, schemaOptions: { partial: true })",
+        "description": "(tsType: Omit<Item, 'completed_at'>, schemaOptions: { title: 'UpdateItem', exclude: [ 'completed_at' ] })",
         "properties": {
           "id": {
             "readOnly": true,
@@ -756,14 +757,32 @@
           },
           "is_completed": {
             "type": "boolean"
+          }
+        },
+        "required": [
+          "content",
+          "todoId"
+        ],
+        "additionalProperties": false,
+        "x-typescript-type": "Omit<Item, 'completed_at'>"
+      },
+      "UpdateItemRequest": {
+        "title": "UpdateItemRequest",
+        "type": "object",
+        "description": "(tsType: Omit<Partial<Item>, 'id' | 'completed_at'>, schemaOptions: { partial: true, exclude: [ 'id', 'completed_at' ], title: 'UpdateItemRequest' })",
+        "properties": {
+          "content": {
+            "type": "string"
           },
-          "completed_at": {
-            "type": "string",
-            "format": "date-time"
+          "todoId": {
+            "type": "number"
+          },
+          "is_completed": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false,
-        "x-typescript-type": "Partial<Item>"
+        "x-typescript-type": "Omit<Partial<Item>, 'id' | 'completed_at'>"
       },
       "PingResponse": {
         "type": "object",

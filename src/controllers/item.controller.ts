@@ -91,10 +91,14 @@ export class ItemController {
 
   @patch('/items/{id}')
   @response(200, {
-    description: 'Item model instance',
+    description:
+      '更新項目。注意：completed_at 欄位由系統自動根據 is_completed 的值進行管理，無需手動設置。',
     content: {
       'application/json': {
-        schema: getModelSchemaRef(Item),
+        schema: getModelSchemaRef(Item, {
+          title: 'UpdateItem',
+          exclude: ['completed_at'],
+        }),
       },
     },
   })
@@ -103,9 +107,15 @@ export class ItemController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Item, { partial: true }),
+          schema: getModelSchemaRef(Item, {
+            partial: true,
+            exclude: ['id', 'completed_at'],
+            title: 'UpdateItemRequest',
+          }),
         },
       },
+      description:
+        '可更新項目的內容、完成狀態或所屬待辦事項。completed_at 由系統自動管理。',
     })
     item: Partial<Item>,
   ): Promise<Item> {

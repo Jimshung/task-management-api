@@ -4,6 +4,14 @@ import { TodoRepository } from '../../repositories';
 import { initializeTestDatabase } from '../../utils/test-db-init';
 import { setupApplication } from './test-helper';
 
+interface TodoItem {
+  id: number;
+  content: string;
+  todoId: number;
+  is_completed: boolean;
+  completed_at: string | null;
+}
+
 describe('TodoController', () => {
   describe('整合測試 (需要資料庫)', () => {
     let app: TodoAppApplication;
@@ -205,7 +213,11 @@ describe('TodoController', () => {
       });
 
       it('查詢存在的 Todo - 應該返回完整資料', async () => {
-        // 先創建一個 Todo 和相關的 Items
+        // 先清理可能存在的測試數據
+        const todoRepo = await app.getRepository(TodoRepository);
+        await todoRepo.deleteAll();
+
+        // 創建測試數據
         const createRes = await client.post('/todos').send({
           todo: {
             title: '測試標題',
@@ -231,11 +243,21 @@ describe('TodoController', () => {
           status: 'ACTIVE',
         });
         expect(getRes.body.items).to.have.length(2);
-        expect(getRes.body.items[0]).to.containDeep({
+
+        // 找到對應的項目進行驗證
+        const item1 = getRes.body.items.find(
+          (item: TodoItem) => item.content === '測試項目1',
+        );
+        const item2 = getRes.body.items.find(
+          (item: TodoItem) => item.content === '測試項目2',
+        );
+
+        expect(item1).to.containDeep({
           content: '測試項目1',
           is_completed: false,
         });
-        expect(getRes.body.items[1]).to.containDeep({
+
+        expect(item2).to.containDeep({
           content: '測試項目2',
           is_completed: true,
         });
