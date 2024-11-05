@@ -31,7 +31,7 @@ export async function setupApplication(
     host: process.env.DB_HOST ?? 'localhost',
     port: Number(process.env.DB_PORT ?? '3306'),
     user: process.env.DB_USER ?? 'root',
-    password: process.env.DB_PASSWORD ?? 'wewe9073',
+    password: process.env.DB_PASSWORD ?? 'default_password',
     database: process.env.DB_DATABASE ?? 'todo_db_test',
     charset: 'utf8mb4',
     collation: 'utf8mb4_unicode_ci',

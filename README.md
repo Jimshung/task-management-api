@@ -29,7 +29,7 @@ npm install
 ```bash
 docker run -d \
   --name mysql \
-  -e MYSQL_ROOT_PASSWORD=wewe9073 \
+  -e MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD} \
   -e MYSQL_DATABASE=todo_db \
   -p 3306:3306 \
   -v $(pwd)/my.cnf:/etc/mysql/conf.d/my.cnf \
@@ -103,6 +103,10 @@ npm run db:check
 # 重建資料庫結構
 npm run db:migrate:rebuild
 ```
+
+# Environment Variables
+
+Copy `.env.example` to `.env` and update the values:
 
 ```
 
