@@ -44,7 +44,6 @@ export async function setupApplication(
   const client = createRestAppClient(app);
   return { app, client };
 }
-
 export interface AppWithClient {
   app: TodoAppApplication;
   client: Client;

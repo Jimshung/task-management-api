@@ -134,10 +134,112 @@ describe('TodoController', () => {
       const deleteRes = await client.delete(`/todos/${todoId}`);
       expect(deleteRes.status).to.equal(204);
 
-      // 確認該記錄已被軟刪除
+      // 確認該記錄已被軟刪除（應該返回 404）
       const getRes = await client.get(`/todos/${todoId}`);
-      expect(getRes.status).to.equal(200);
-      expect(getRes.body.deletedAt).to.not.be.undefined();
+      expect(getRes.status).to.equal(404);
+      expect(getRes.body.error).to.containDeep({
+        statusCode: 404,
+        name: 'ApiError',
+        message: '找不到該待辦事項',
+        code: 'NOT_FOUND',
+        details: {
+          id: todoId,
+        },
+      });
+    });
+
+    describe('GET /todos/{id}', () => {
+      it('查詢不存在的 Todo ID - 應該返回 404', async () => {
+        const nonExistentId = 99999;
+        const res = await client.get(`/todos/${nonExistentId}`);
+
+        expect(res.status).to.equal(404);
+        expect(res.body.error).to.containDeep({
+          statusCode: 404,
+          name: 'ApiError',
+          message: '找不到該待辦事項',
+          code: 'NOT_FOUND',
+          details: {
+            id: nonExistentId,
+          },
+        });
+      });
+
+      it('查詢無效的 Todo ID - 應該返回 400', async () => {
+        const invalidId = 'invalid';
+        const res = await client.get(`/todos/${invalidId}`);
+
+        expect(res.status).to.equal(400);
+        expect(res.body.error).to.containDeep({
+          statusCode: 400,
+          name: 'BadRequestError',
+          message: 'Invalid data "invalid" for parameter "id".',
+          code: 'INVALID_PARAMETER_VALUE',
+        });
+      });
+
+      it('查詢已被軟刪除的 Todo - 應該返回 404', async () => {
+        // 先創建一個 Todo
+        const createRes = await client.post('/todos').send({
+          todo: { title: '測試標題', status: 'ACTIVE' },
+          items: [],
+        });
+        const todoId = createRes.body.todo.id;
+
+        // 軟刪除該 Todo
+        await client.delete(`/todos/${todoId}`);
+
+        // 嘗試查詢該 Todo
+        const getRes = await client.get(`/todos/${todoId}`);
+
+        expect(getRes.status).to.equal(404);
+        expect(getRes.body.error).to.containDeep({
+          statusCode: 404,
+          name: 'ApiError',
+          message: '找不到該待辦事項',
+          code: 'NOT_FOUND',
+          details: {
+            id: todoId,
+          },
+        });
+      });
+
+      it('查詢存在的 Todo - 應該返回完整資料', async () => {
+        // 先創建一個 Todo 和相關的 Items
+        const createRes = await client.post('/todos').send({
+          todo: {
+            title: '測試標題',
+            subtitle: '測試副標題',
+            status: 'ACTIVE',
+          },
+          items: [
+            { content: '測試項目1', is_completed: false },
+            { content: '測試項目2', is_completed: true },
+          ],
+        });
+
+        const todoId = createRes.body.todo.id;
+
+        // 查詢該 Todo
+        const getRes = await client.get(`/todos/${todoId}`);
+
+        expect(getRes.status).to.equal(200);
+        expect(getRes.body).to.containDeep({
+          id: todoId,
+          title: '測試標題',
+          subtitle: '測試副標題',
+          status: 'ACTIVE',
+        });
+        expect(getRes.body.items).to.have.length(2);
+        expect(getRes.body.items[0]).to.containDeep({
+          content: '測試項目1',
+          is_completed: false,
+        });
+        expect(getRes.body.items[1]).to.containDeep({
+          content: '測試項目2',
+          is_completed: true,
+        });
+      });
     });
   });
 

@@ -103,13 +103,28 @@ export class TodoService {
       const todo = await this.todoRepository.findOne({
         where: {
           id: id,
-          deletedAt: undefined, // 只查詢未被軟刪除的記錄
         },
-        include: ['items'],
+        include: [
+          {
+            relation: 'items',
+            scope: {
+              order: ['id ASC'],
+            },
+          },
+        ],
       });
+
+      if (!todo || todo.deletedAt) {
+        throw new ApiError(404, '找不到該待辦事項', ErrorCodes.NOT_FOUND, {
+          id,
+        });
+      }
 
       return todo;
     } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
       throw new ApiError(
         500,
         '查詢待辦事項失敗',

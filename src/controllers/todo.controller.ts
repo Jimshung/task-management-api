@@ -144,6 +144,18 @@ export class TodoController {
     todo: Partial<Todo>,
   ): Promise<Todo> {
     try {
+      const existingTodo = await this.todoService.findTodoById(id);
+      if (!existingTodo) {
+        throw new ApiError(404, '找不到該待辦事項', ErrorCodes.NOT_FOUND);
+      }
+
+      if (todo.status && !['ACTIVE', 'INACTIVE'].includes(todo.status)) {
+        throw new ApiError(422, '無效的狀態值', ErrorCodes.VALIDATION_ERROR, {
+          field: 'status',
+          value: todo.status,
+        });
+      }
+
       await this.todoService.updateTodo(id, todo);
       const updatedTodo = await this.todoService.findTodoById(id);
       if (!updatedTodo) {
@@ -180,15 +192,54 @@ export class TodoController {
       },
     },
   })
-  public async findById(@param.path.number('id') id: number): Promise<Todo> {
+  @response(404, {
+    description: 'Todo not found',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            error: {
+              type: 'object',
+              properties: {
+                statusCode: { type: 'number' },
+                name: { type: 'string' },
+                message: { type: 'string' },
+                code: { type: 'string' },
+                details: {
+                  type: 'object',
+                  additionalProperties: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  public async findById(
+    @param.path.number('id', { required: true }) id: number,
+  ): Promise<Todo> {
     try {
       const todo = await this.todoService.findTodoById(id);
+
       if (!todo) {
-        throw new ApiError(404, '找不到該待辦事項', ErrorCodes.NOT_FOUND);
+        throw new ApiError(404, '找不到該待辦事項', ErrorCodes.NOT_FOUND, {
+          id,
+        });
       }
+
       return todo;
     } catch (error) {
-      if (error instanceof ApiError) throw error;
+      if (error.code === 'INVALID_PARAMETER_VALUE') {
+        throw error;
+      }
+
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      console.error('獲取待辦事項時發生錯誤:', error);
       throw new ApiError(
         500,
         '獲取待辦事項失敗',
