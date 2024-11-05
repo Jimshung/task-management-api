@@ -4,72 +4,23 @@
     "title": "todo-app",
     "version": "0.0.1",
     "description": "todo-app",
-    "contact": {
-      "name": "Jim",
-      "email": "jim40513@gmail.com"
-    }
+    "contact": {}
   },
   "paths": {
-    "/items/bulk-completion": {
+    "/items/{id}": {
       "patch": {
         "x-controller-name": "ItemController",
-        "x-operation-name": "bulkUpdateCompletion",
+        "x-operation-name": "updateById",
         "tags": [
           "ItemController"
         ],
         "responses": {
-          "204": {
-            "description": "No Content",
+          "200": {
+            "description": "Item model instance",
             "content": {
               "application/json": {
                 "schema": {
-                  "description": "Items completion status updated successfully"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "ids",
-                  "isCompleted"
-                ],
-                "properties": {
-                  "ids": {
-                    "type": "array",
-                    "items": {
-                      "type": "number"
-                    }
-                  },
-                  "isCompleted": {
-                    "type": "boolean"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "operationId": "ItemController.bulkUpdateCompletion"
-      }
-    },
-    "/items/{id}/completion": {
-      "patch": {
-        "x-controller-name": "ItemController",
-        "x-operation-name": "updateCompletion",
-        "tags": [
-          "ItemController"
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "description": "Item completion status updated successfully"
+                  "$ref": "#/components/schemas/Item"
                 }
               }
             }
@@ -89,21 +40,73 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "isCompleted"
-                ],
-                "properties": {
-                  "isCompleted": {
-                    "type": "boolean"
-                  }
-                }
+                "$ref": "#/components/schemas/ItemPartial"
               }
             }
           },
           "x-parameter-index": 1
         },
-        "operationId": "ItemController.updateCompletion"
+        "operationId": "ItemController.updateById"
+      },
+      "get": {
+        "x-controller-name": "ItemController",
+        "x-operation-name": "findById",
+        "tags": [
+          "ItemController"
+        ],
+        "responses": {
+          "200": {
+            "description": "Item model instance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "number"
+            },
+            "required": true
+          }
+        ],
+        "operationId": "ItemController.findById"
+      },
+      "delete": {
+        "x-controller-name": "ItemController",
+        "x-operation-name": "deleteById",
+        "tags": [
+          "ItemController"
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Item DELETE success"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "number"
+            },
+            "required": true
+          }
+        ],
+        "operationId": "ItemController.deleteById"
       }
     },
     "/ping": {
@@ -129,6 +132,46 @@
       }
     },
     "/todos/{todoId}/items": {
+      "post": {
+        "x-controller-name": "ItemController",
+        "x-operation-name": "create",
+        "tags": [
+          "ItemController"
+        ],
+        "responses": {
+          "201": {
+            "description": "Item model instance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewItem"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "todoId",
+            "in": "path",
+            "schema": {
+              "type": "number"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewItem"
+              }
+            }
+          },
+          "x-parameter-index": 1
+        },
+        "operationId": "ItemController.create"
+      },
       "get": {
         "x-controller-name": "ItemController",
         "x-operation-name": "findByTodoId",
@@ -170,20 +213,53 @@
         "operationId": "ItemController.findByTodoId"
       }
     },
-    "/todos/{id}/status": {
+    "/todos/{id}": {
       "patch": {
         "x-controller-name": "TodoController",
-        "x-operation-name": "updateStatus",
+        "x-operation-name": "updateById",
         "tags": [
           "TodoController"
         ],
         "responses": {
-          "204": {
-            "description": "No Content",
+          "200": {
+            "description": "Todo PATCH success",
             "content": {
               "application/json": {
                 "schema": {
-                  "description": "Todo status updated successfully"
+                  "$ref": "#/components/schemas/TodoResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Todo not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "statusCode": {
+                          "type": "number"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "code": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -203,28 +279,79 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "status"
-                ],
-                "properties": {
-                  "status": {
-                    "type": "string",
-                    "enum": [
-                      "ACTIVE",
-                      "INACTIVE"
-                    ]
-                  }
+                "$ref": "#/components/schemas/TodoPartial"
+              }
+            }
+          },
+          "description": "Todo partial update",
+          "required": true,
+          "x-parameter-index": 1
+        },
+        "operationId": "TodoController.updateById"
+      },
+      "get": {
+        "x-controller-name": "TodoController",
+        "x-operation-name": "findById",
+        "tags": [
+          "TodoController"
+        ],
+        "responses": {
+          "200": {
+            "description": "Todo model instance with items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoWithRelations"
                 }
               }
             }
           },
-          "x-parameter-index": 1
+          "404": {
+            "description": "Todo not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "statusCode": {
+                          "type": "number"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "code": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         },
-        "operationId": "TodoController.updateStatus"
-      }
-    },
-    "/todos/{id}": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "number"
+            },
+            "required": true
+          }
+        ],
+        "operationId": "TodoController.findById"
+      },
       "delete": {
         "x-controller-name": "TodoController",
         "x-operation-name": "delete",
@@ -237,7 +364,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "description": "Todo DELETE success"
+                  "description": "Todo DELETE success (No Content)"
                 }
               }
             }
@@ -254,37 +381,6 @@
           }
         ],
         "operationId": "TodoController.delete"
-      },
-      "get": {
-        "summary": "根據 ID 取得單一 Todo",
-        "description": "取得 Todo 及其關聯的 Items",
-        "responses": {
-          "200": {
-            "description": "Todo model instance with items",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TodoWithRelations"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "summary": "根據 ID 更新 Todo",
-        "responses": {
-          "200": {
-            "description": "Todo PATCH success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Todo"
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/todos": {
@@ -344,18 +440,27 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid input",
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "code": {
+                    "statusCode": {
+                      "type": "number"
+                    },
+                    "name": {
                       "type": "string"
                     },
                     "message": {
                       "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "object"
                     }
                   }
                 }
@@ -450,19 +555,15 @@
           {
             "name": "page",
             "in": "query",
-            "description": "頁碼",
             "schema": {
-              "type": "integer",
-              "minimum": 1
+              "type": "number"
             }
           },
           {
             "name": "limit",
             "in": "query",
-            "description": "每頁筆數",
             "schema": {
-              "type": "integer",
-              "minimum": 1
+              "type": "number"
             }
           }
         ],
@@ -489,21 +590,20 @@
           "content": {
             "type": "string"
           },
+          "todoId": {
+            "type": "number"
+          },
           "is_completed": {
             "type": "boolean"
           },
           "completed_at": {
             "type": "string",
             "format": "date-time"
-          },
-          "todo_id": {
-            "type": "number"
-          },
-          "foreignKey": {}
+          }
         },
         "required": [
           "content",
-          "is_completed"
+          "todoId"
         ],
         "additionalProperties": false,
         "x-typescript-type": "ItemWithRelations"
@@ -526,9 +626,10 @@
           "status": {
             "type": "string"
           },
-          "deleted_at": {
+          "deletedAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "nullable": true
           },
           "items": {
             "type": "array",
@@ -544,6 +645,50 @@
         "additionalProperties": false,
         "x-typescript-type": "TodoWithRelations"
       },
+      "TodoResponse": {
+        "title": "TodoResponse",
+        "type": "object",
+        "description": "(tsType: Omit<Todo, 'deletedAt'>, schemaOptions: { title: 'TodoResponse', exclude: [ 'deletedAt' ] })",
+        "properties": {
+          "id": {
+            "readOnly": true,
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "status"
+        ],
+        "additionalProperties": false,
+        "x-typescript-type": "Omit<Todo, 'deletedAt'>"
+      },
+      "TodoPartial": {
+        "title": "TodoPartial",
+        "type": "object",
+        "description": "(tsType: Omit<Partial<Todo>, 'id' | 'deletedAt'>, schemaOptions: { partial: true, exclude: [ 'id', 'deletedAt' ], title: 'TodoPartial' })",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "x-typescript-type": "Omit<Partial<Todo>, 'id' | 'deletedAt'>"
+      },
       "Item": {
         "title": "Item",
         "type": "object",
@@ -555,22 +700,70 @@
           "content": {
             "type": "string"
           },
+          "todoId": {
+            "type": "number"
+          },
           "is_completed": {
             "type": "boolean"
           },
           "completed_at": {
             "type": "string",
             "format": "date-time"
-          },
-          "todo_id": {
-            "type": "number"
           }
         },
         "required": [
           "content",
-          "is_completed"
+          "todoId"
         ],
         "additionalProperties": false
+      },
+      "NewItem": {
+        "title": "NewItem",
+        "type": "object",
+        "description": "(tsType: Omit<Item, 'id' | 'todoId'>, schemaOptions: { title: 'NewItem', exclude: [ 'id', 'todoId' ] })",
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "is_completed": {
+            "type": "boolean"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "additionalProperties": false,
+        "x-typescript-type": "Omit<Item, 'id' | 'todoId'>"
+      },
+      "ItemPartial": {
+        "title": "ItemPartial",
+        "type": "object",
+        "description": "(tsType: Partial<Item>, schemaOptions: { partial: true })",
+        "properties": {
+          "id": {
+            "readOnly": true,
+            "type": "number"
+          },
+          "content": {
+            "type": "string"
+          },
+          "todoId": {
+            "type": "number"
+          },
+          "is_completed": {
+            "type": "boolean"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "x-typescript-type": "Partial<Item>"
       },
       "PingResponse": {
         "type": "object",
@@ -593,31 +786,6 @@
               }
             },
             "additionalProperties": true
-          }
-        }
-      },
-      "Todo": {
-        "type": "object",
-        "required": ["title"],
-        "properties": {
-          "id": {
-            "type": "number",
-            "readOnly": true
-          },
-          "title": {
-            "type": "string"
-          },
-          "subtitle": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": ["ACTIVE", "INACTIVE"],
-            "default": "ACTIVE"
-          },
-          "deleted_at": {
-            "type": "string",
-            "format": "date-time"
           }
         }
       }

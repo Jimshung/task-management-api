@@ -22,7 +22,8 @@
     "eslint": "lb-eslint --report-unused-disable-directives .",
     "eslint:fix": "npm run eslint -- --fix",
     "pretest": "npm run rebuild",
-    "test": "NODE_ENV=test mocha --require dotenv/config 'dist/__tests__/**/*.js' --timeout 10000 --exit --no-deprecation",
+    "test": "npm run build && NODE_ENV=test mocha --exit 'dist/__tests__/**/*.js'",
+    "test:watch": "npm run build && NODE_ENV=test mocha --exit --watch 'dist/__tests__/**/*.js' --timeout 10000 --no-deprecation",
     "test:db:migrate": "NODE_ENV=test node -r dotenv/config ./dist/migrate dotenv_config_path=.env.test",
     "posttest": "echo 'Skipping lint check'",
     "test:dev": "lb-mocha --allow-console-logs 'dist/__tests__/**/*.js' --no-deprecation",
@@ -43,7 +44,6 @@
     "db:check": "npm run build && node ./dist/utils/db-check",
     "db:init": "npm run build && node ./dist/utils/db-init.js",
     "prepare": "husky install",
-    "test:watch": "NODE_ENV=test mocha --require ts-node/register 'src/**/*.{test,spec,acceptance}.ts' --watch --timeout 10000 --no-deprecation",
     "dev": "lb-tsc --watch",
     "test:ts": "NODE_ENV=test mocha --require ts-node/register 'src/**/*.{test,spec,acceptance}.ts' --timeout 10000 --no-deprecation",
     "test:ts:filter": "NODE_ENV=test mocha --require ts-node/register 'src/**/*.{test,spec,acceptance}.ts' --timeout 10000 --no-deprecation -g"

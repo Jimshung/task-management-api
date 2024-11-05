@@ -8,10 +8,7 @@ describe('PingController', () => {
 
   before('setupApplication', async () => {
     ({ app, client } = await setupApplication());
-  });
-
-  after(async () => {
-    await app.stop();
+    global.app = app;
   });
 
   it('invokes GET /ping', async () => {

@@ -128,16 +128,50 @@ export class TodoController {
     description: 'Todo PATCH success',
     content: {
       'application/json': {
-        schema: getModelSchemaRef(Todo),
+        schema: getModelSchemaRef(Todo, {
+          title: 'TodoResponse',
+          exclude: ['deletedAt'],
+        }),
+      },
+    },
+  })
+  @response(404, {
+    description: 'Todo not found',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            error: {
+              type: 'object',
+              properties: {
+                statusCode: { type: 'number' },
+                name: { type: 'string' },
+                message: { type: 'string' },
+                code: { type: 'string' },
+                details: {
+                  type: 'object',
+                  additionalProperties: true,
+                },
+              },
+            },
+          },
+        },
       },
     },
   })
   public async updateById(
     @param.path.number('id') id: number,
     @requestBody({
+      description: 'Todo partial update',
+      required: true,
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Todo, { partial: true }),
+          schema: getModelSchemaRef(Todo, {
+            partial: true,
+            exclude: ['id', 'deletedAt'],
+            title: 'TodoPartial',
+          }),
         },
       },
     })

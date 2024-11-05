@@ -10,6 +10,12 @@ import { DataSourceConfig } from '../../types/database.types';
 const envFile = process.env.NODE_ENV === 'test' ? '.env.test' : '.env';
 dotenv.config({ path: envFile });
 
+// 定義全域變數的類型
+declare global {
+  // eslint-disable-next-line no-var
+  var app: TodoAppApplication | undefined;
+}
+
 export async function setupApplication(
   options: {
     enableLogging?: boolean;
@@ -44,6 +50,19 @@ export async function setupApplication(
   const client = createRestAppClient(app);
   return { app, client };
 }
+
+// 修改全域的 after hook，使用 Promise 而不是 callback
+after(async () => {
+  const cleanup = async (): Promise<void> => {
+    if (global.app) {
+      await global.app.stop();
+      global.app = undefined;
+    }
+  };
+
+  await cleanup();
+});
+
 export interface AppWithClient {
   app: TodoAppApplication;
   client: Client;
