@@ -81,7 +81,13 @@ export class ItemService {
     },
   ): Promise<Item[]> {
     try {
-      const todo = await this.todoRepository.findById(todoId);
+      const todo = await this.todoRepository.findOne({
+        where: {
+          id: todoId,
+          deletedAt: undefined,
+        },
+      });
+
       if (!todo) {
         throw new ApiError(404, '找不到該待辦事項', ErrorCodes.NOT_FOUND);
       }
@@ -112,13 +118,13 @@ export class ItemService {
 
   public async findById(id: number): Promise<Item> {
     try {
-      const item = await this.itemRepository.findById(id).catch(() => null);
-      if (!item) {
+      const exists = await this.itemRepository.exists(id);
+      if (!exists) {
         throw new ApiError(404, '找不到該項目', ErrorCodes.NOT_FOUND, {
           id,
         });
       }
-      return item;
+      return await this.itemRepository.findById(id);
     } catch (error) {
       if (error instanceof ApiError) throw error;
       throw new ApiError(500, '獲取項目失敗', ErrorCodes.DATABASE_ERROR, error);
@@ -135,10 +141,8 @@ export class ItemService {
 
   public async updateById(id: number, item: Partial<Item>): Promise<Item> {
     try {
-      const existingItem = await this.itemRepository
-        .findById(id)
-        .catch(() => null);
-      if (!existingItem) {
+      const exists = await this.itemRepository.exists(id);
+      if (!exists) {
         throw new ApiError(404, '找不到要更新的項目', ErrorCodes.NOT_FOUND, {
           id,
         });
@@ -159,10 +163,8 @@ export class ItemService {
 
   public async deleteById(id: number): Promise<void> {
     try {
-      const existingItem = await this.itemRepository
-        .findById(id)
-        .catch(() => null);
-      if (!existingItem) {
+      const exists = await this.itemRepository.exists(id);
+      if (!exists) {
         throw new ApiError(404, '找不到要刪除的項目', ErrorCodes.NOT_FOUND, {
           id,
         });

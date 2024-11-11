@@ -96,7 +96,13 @@ export class TodoService {
   // 軟刪除 Todo
   public async deleteTodo(id: number): Promise<void> {
     try {
-      const todo = await this.todoRepository.findById(id);
+      const todo = await this.todoRepository.findOne({
+        where: {
+          id: id,
+          deletedAt: undefined,
+        },
+      });
+
       if (!todo) {
         throw new ApiError(404, '找不到該待辦事項', ErrorCodes.NOT_FOUND, {
           id,
@@ -123,6 +129,7 @@ export class TodoService {
       const todo = await this.todoRepository.findOne({
         where: {
           id: id,
+          deletedAt: undefined,
         },
         include: [
           {
@@ -134,7 +141,7 @@ export class TodoService {
         ],
       });
 
-      if (!todo || todo.deletedAt) {
+      if (!todo) {
         throw new ApiError(404, '找不到該待辦事項', ErrorCodes.NOT_FOUND, {
           id,
         });
